@@ -87,8 +87,16 @@ export async function setupGeofencing(): Promise<{ granted: boolean }> {
   const granted = await requestGeofencingPermissions();
   if (!granted) return { granted: false };
 
-  if (!(await isGeofencingActive())) {
-    await registerOfficeGeofences();
+  try {
+    if (!(await isGeofencingActive())) {
+      await registerOfficeGeofences();
+    }
+  } catch (err) {
+    // Region monitoring can be granted but still unavailable (e.g. the iOS
+    // Simulator, which lacks real GPS hardware) — clock-in/out prompts just
+    // won't fire in that case, which shouldn't surface as an app-level error.
+    console.warn('[geofence-service] geofencing unavailable', err instanceof Error ? err.message : err);
+    return { granted: false };
   }
   return { granted: true };
 }

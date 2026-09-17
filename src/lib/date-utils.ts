@@ -1,5 +1,8 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** The work week is Monday–Friday. */
+export const WEEK_LENGTH_DAYS = 5;
+
 /** Monday 00:00 of the week containing `date`. */
 export function getWeekStart(date = new Date()): Date {
   const d = new Date(date);
@@ -34,13 +37,13 @@ export function getMonthEnd(monthStart: Date): Date {
   return new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
 }
 
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 export function getWeekdayLabels(): string[] {
   return WEEKDAY_LABELS;
 }
 
 export function formatWeekRange(weekStart: Date): string {
-  const weekEnd = addDays(weekStart, 6);
+  const weekEnd = addDays(weekStart, WEEK_LENGTH_DAYS - 1);
   const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
   const startLabel = weekStart.toLocaleDateString('en-NZ', { day: 'numeric', month: sameMonth ? undefined : 'short' });
   const endLabel = weekEnd.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });

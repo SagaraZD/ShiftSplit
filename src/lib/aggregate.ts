@@ -1,7 +1,12 @@
 import { OFFICE_GEOFENCES, WEEKLY_TARGET_MINUTES } from '@/constants/locations';
 import type { WorkLogRow } from '@/types/database';
 
-import { addDays, getWeekStart } from './date-utils';
+import { addDays, getWeekStart, WEEK_LENGTH_DAYS } from './date-utils';
+
+function isWeekday(date: Date): boolean {
+  const day = date.getDay(); // 0 = Sun, 6 = Sat
+  return day !== 0 && day !== 6;
+}
 
 export interface LocationTotal {
   locationId: string;
@@ -39,7 +44,9 @@ export function bucketLogsByWeek(logs: WorkLogRow[], monthStart: Date, monthEnd:
   }
 
   for (const log of logs) {
-    const weekKey = getWeekStart(new Date(log.start_time)).getTime();
+    const startTime = new Date(log.start_time);
+    if (!isWeekday(startTime)) continue; // the work week is Monday–Friday
+    const weekKey = getWeekStart(startTime).getTime();
     if (!buckets.has(weekKey)) buckets.set(weekKey, []);
     buckets.get(weekKey)!.push(log);
   }
@@ -64,7 +71,7 @@ export interface DayBucket {
 }
 
 export function bucketLogsByDay(logs: WorkLogRow[], weekStart: Date): DayBucket[] {
-  return Array.from({ length: 7 }, (_, dayIndex) => {
+  return Array.from({ length: WEEK_LENGTH_DAYS }, (_, dayIndex) => {
     const date = addDays(weekStart, dayIndex);
     const dayLogs = logs.filter((log) => {
       const started = new Date(log.start_time);

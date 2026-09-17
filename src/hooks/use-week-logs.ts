@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useRealtimeWorkLogs } from '@/hooks/use-realtime-work-logs';
 import { bucketLogsByDay, type DayBucket } from '@/lib/aggregate';
-import { addDays } from '@/lib/date-utils';
+import { addDays, WEEK_LENGTH_DAYS } from '@/lib/date-utils';
 import { getWorkLogsInRange } from '@/services/work-log-service';
 
 export function useWeekLogs(userId: string | undefined, weekStart: Date) {
@@ -11,7 +11,7 @@ export function useWeekLogs(userId: string | undefined, weekStart: Date) {
 
   const refresh = useCallback(async () => {
     if (!userId) return;
-    const weekEnd = addDays(weekStart, 7);
+    const weekEnd = addDays(weekStart, WEEK_LENGTH_DAYS);
     const logs = await getWorkLogsInRange(userId, weekStart, weekEnd);
     setDays(bucketLogsByDay(logs, weekStart));
   }, [userId, weekStart]);

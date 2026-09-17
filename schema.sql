@@ -220,8 +220,9 @@ language sql
 stable
 as $$
   with week_bounds as (
+    -- The work week is Monday through Friday; p_start_date is always a Monday.
     select p_start_date::timestamptz as week_start,
-           (p_start_date + interval '7 days')::timestamptz as week_end
+           (p_start_date + interval '5 days')::timestamptz as week_end
   ),
   logs as (
     select wl.location_id, wl.duration_minutes
