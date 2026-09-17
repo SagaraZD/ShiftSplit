@@ -1,16 +1,18 @@
 {
   "expo": {
-    "name": "workspan-nz",
-    "slug": "workspan-nz",
+    "name": "ShiftSplit",
+    "slug": "shiftsplit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "workspannz",
+    "scheme": "shiftsplit",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.shiftsplit.app"
     },
     "android": {
+      "package": "com.shiftsplit.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -20,7 +22,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -32,11 +34,37 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "ShiftSplit uses your location to automatically detect when you arrive at or leave the Mangere and Highbrook offices.",
+          "locationWhenInUsePermission": "ShiftSplit uses your location to detect when you arrive at or leave your office.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ShiftSplit uses your photo library to set your profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ea65280d-e57f-48d8-81bc-fae616a43f2a"
+      }
+    },
+    "owner": "ganushkas-team"
   }
 }

@@ -1,0 +1,19 @@
+diff --git a/node_modules/react-native-css-interop/dist/runtime/web/color-scheme.js b/node_modules/react-native-css-interop/dist/runtime/web/color-scheme.js
+index 4030060..7798ab6 100644
+--- a/node_modules/react-native-css-interop/dist/runtime/web/color-scheme.js
++++ b/node_modules/react-native-css-interop/dist/runtime/web/color-scheme.js
+@@ -33,9 +33,11 @@ else if ("window" in globalThis) {
+         const flags = darkModeFlag.split(" ");
+         darkMode = flags[0];
+         darkModeValue = flags[1];
+-        exports.colorScheme.set(globalThis.window.document.documentElement.classList.contains(darkModeValue)
+-            ? "dark"
+-            : "system");
++        if (darkMode !== "media") {
++            exports.colorScheme.set(globalThis.window.document.documentElement.classList.contains(darkModeValue)
++                ? "dark"
++                : "system");
++        }
+     }).observe(headNode, { attributes: false, childList: true, subtree: false });
+ }
+ const systemColorScheme = (0, observable_1.observable)(appearance.getColorScheme() === "dark" ? "dark" : "light");
