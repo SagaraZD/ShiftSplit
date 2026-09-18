@@ -1,34 +1,47 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
-const DURATION = 2200;
+const DURATION = 600;
+// Guaranteed minimum time the branded splash stays fully visible, so it
+// never flashes by too fast to read even when auth resolves instantly.
+const MIN_DISPLAY_MS = 1800;
 
-export function AnimatedSplashOverlay() {
+interface Props {
+  /** True once the app has finished its real startup work (e.g. auth check). */
+  ready: boolean;
+}
+
+export function AnimatedSplashOverlay({ ready }: Props) {
+  const [layoutDone, setLayoutDone] = useState(false);
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
 
+  useEffect(() => {
+    if (!layoutDone) return;
+    const timer = setTimeout(() => setMinTimeElapsed(true), MIN_DISPLAY_MS);
+    return () => clearTimeout(timer);
+  }, [layoutDone]);
+
+  useEffect(() => {
+    if (ready && minTimeElapsed) setAnimate(true);
+  }, [ready, minTimeElapsed]);
+
   if (!visible) return null;
 
+  // The minimum-visible hold is handled above by MIN_DISPLAY_MS before
+  // `animate` ever becomes true, so this keyframe is just the fade-out.
   const splashKeyframe = new Keyframe({
     0: {
-      transform: [{ scale: 1 }],
       opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
     },
     100: {
       opacity: 0,
-      transform: [{ scale: 1 }],
       easing: Easing.elastic(0.7),
     },
   });
@@ -37,7 +50,10 @@ export function AnimatedSplashOverlay() {
     <View style={styles.contentContainer}>
       <Text style={styles.appName}>ShiftSplit</Text>
       <Image style={styles.image} source={require('@/assets/images/splash-icon.png')} />
-      <Text style={styles.credit}>by Ganushka Gamage</Text>
+      <View style={styles.footer}>
+        <ActivityIndicator color="#FFFFFF" />
+        <Text style={styles.credit}>by Ganushka Gamage</Text>
+      </View>
     </View>
   );
 
@@ -56,7 +72,7 @@ export function AnimatedSplashOverlay() {
     <View
       onLayout={() => {
         SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
+          setLayoutDone(true);
         });
       }}
       style={styles.splashOverlay}>
@@ -160,6 +176,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  footer: {
+    alignItems: 'center',
+    gap: 12,
   },
   credit: {
     color: '#FFFFFF',

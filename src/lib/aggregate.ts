@@ -70,9 +70,9 @@ export interface DayBucket {
   totalMinutes: number;
 }
 
-export function bucketLogsByDay(logs: WorkLogRow[], weekStart: Date): DayBucket[] {
-  return Array.from({ length: WEEK_LENGTH_DAYS }, (_, dayIndex) => {
-    const date = addDays(weekStart, dayIndex);
+export function bucketLogsByDay(logs: WorkLogRow[], rangeStart: Date, dayCount = WEEK_LENGTH_DAYS): DayBucket[] {
+  return Array.from({ length: dayCount }, (_, dayIndex) => {
+    const date = addDays(rangeStart, dayIndex);
     const dayLogs = logs.filter((log) => {
       const started = new Date(log.start_time);
       return (

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Text } from '@/components/ui/text';
 
 import { LocationBreakdownCard } from '@/components/shift/location-breakdown-card';
 import { type PeriodMode, PeriodSwitcher } from '@/components/shift/period-switcher';

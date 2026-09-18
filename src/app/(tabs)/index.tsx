@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
 import { Settings } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Text } from '@/components/ui/text';
 
 import { ActiveSessionCard } from '@/components/shift/active-session-card';
 import { ClockInButtons } from '@/components/shift/clock-in-buttons';
@@ -107,6 +109,7 @@ export default function DashboardScreen() {
         {activeLog ? (
           <ActiveSessionCard
             locationId={activeLog.location_id}
+            startTime={activeLog.start_time}
             elapsedSeconds={elapsedSeconds}
             onClockOut={handleClockOut}
             submitting={clockingOut}

@@ -16,22 +16,23 @@ function RootNavigator() {
   const { notificationsEnabled } = usePreferences();
   useShiftTracking(session?.user.id, notificationsEnabled);
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-black">
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
-  if (!session) {
-    return <SignInScreen />;
-  }
-
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <>
+      {/* Stays visible (at least MIN_DISPLAY_MS) until auth has resolved, so
+          the branded splash never hands off to the plain spinner below. */}
+      <AnimatedSplashOverlay ready={!loading} />
+      {loading ? (
+        <View className="flex-1 items-center justify-center bg-white dark:bg-black">
+          <ActivityIndicator />
+        </View>
+      ) : !session ? (
+        <SignInScreen />
+      ) : (
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+      )}
+    </>
   );
 }
 
@@ -39,7 +40,6 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
       <PreferencesProvider>
         <AuthProvider>
           <RootNavigator />

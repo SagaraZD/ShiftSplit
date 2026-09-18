@@ -1,18 +1,20 @@
 import { Square } from 'lucide-react-native';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import { Text } from '@/components/ui/text';
 import { getOfficeGeofence } from '@/constants/locations';
-import { formatElapsed } from '@/lib/date-utils';
+import { formatClockTimestamp, formatElapsed } from '@/lib/date-utils';
 
 interface Props {
   locationId: string;
+  startTime: string;
   elapsedSeconds: number;
   onClockOut: () => void;
   submitting: boolean;
 }
 
-export function ActiveSessionCard({ locationId, elapsedSeconds, onClockOut, submitting }: Props) {
+export function ActiveSessionCard({ locationId, startTime, elapsedSeconds, onClockOut, submitting }: Props) {
   const office = getOfficeGeofence(locationId);
 
   return (
@@ -24,6 +26,7 @@ export function ActiveSessionCard({ locationId, elapsedSeconds, onClockOut, subm
         <View>
           <Text className="text-sm font-medium text-white/80">Clocked in at</Text>
           <Text className="text-xl font-bold text-white">{office?.name ?? 'Unknown office'}</Text>
+          <Text className="mt-0.5 text-sm text-white/80">{formatClockTimestamp(new Date(startTime))}</Text>
         </View>
         <View className="h-2.5 w-2.5 rounded-full bg-white" />
       </View>

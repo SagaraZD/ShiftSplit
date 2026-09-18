@@ -1,7 +1,8 @@
 import { PieChart } from 'react-native-gifted-charts';
-import { Text, useColorScheme, View } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import { Text } from '@/components/ui/text';
 import type { LocationTotal } from '@/lib/aggregate';
 import { formatMinutesAsHours, formatWeekRange } from '@/lib/date-utils';
 

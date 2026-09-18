@@ -1,16 +1,23 @@
 import { Image } from 'expo-image';
 import { Camera, LogOut, User, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/ui/text';
 import { useAuth } from '@/providers/auth-provider';
-import { type ThemePreference, usePreferences } from '@/providers/preferences-provider';
+import { type FontSizePreference, type ThemePreference, usePreferences } from '@/providers/preferences-provider';
 import { pickAndUploadAvatar } from '@/services/avatar-service';
 import { updateProfile } from '@/services/profile-service';
 import type { ProfileRow } from '@/types/database';
 
 const THEME_OPTIONS: ThemePreference[] = ['system', 'light', 'dark'];
+const FONT_SIZE_OPTIONS: { value: FontSizePreference; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large', label: 'Large' },
+  { value: 'extraLarge', label: 'XL' },
+];
 
 interface Props {
   profile: ProfileRow | null;
@@ -20,7 +27,14 @@ interface Props {
 
 export function SettingsSheet({ profile, onProfileChange, onClose }: Props) {
   const { session, signOut } = useAuth();
-  const { themePreference, setThemePreference, notificationsEnabled, setNotificationsEnabled } = usePreferences();
+  const {
+    themePreference,
+    setThemePreference,
+    notificationsEnabled,
+    setNotificationsEnabled,
+    fontSizePreference,
+    setFontSizePreference,
+  } = usePreferences();
 
   const userId = session?.user.id;
 
@@ -153,6 +167,30 @@ export function SettingsSheet({ profile, onProfileChange, onClose }: Props) {
                         selected ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400'
                       }`}>
                       {option}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View className="gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+            <Text className="text-sm text-neutral-500 dark:text-neutral-400">Font Size</Text>
+            <View className="flex-row rounded-2xl bg-neutral-100 p-1 dark:bg-neutral-800">
+              {FONT_SIZE_OPTIONS.map((option) => {
+                const selected = fontSizePreference === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    onPress={() => setFontSizePreference(option.value)}
+                    className={`flex-1 items-center rounded-xl py-2 ${
+                      selected ? 'bg-white dark:bg-neutral-700' : ''
+                    }`}>
+                    <Text
+                      className={`text-xs font-semibold ${
+                        selected ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400'
+                      }`}>
+                      {option.label}
                     </Text>
                   </Pressable>
                 );

@@ -58,6 +58,15 @@ export function isSameWeek(a: Date, b: Date): boolean {
   return getWeekStart(a).getTime() === getWeekStart(b).getTime();
 }
 
+export function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/** Monday-first weekday index: Monday -> 0 ... Sunday -> 6. */
+export function getMondayIndex(date: Date): number {
+  return (date.getDay() + 6) % 7;
+}
+
 export function isCurrentMonth(monthStart: Date, reference = new Date()): boolean {
   return monthStart.getFullYear() === reference.getFullYear() && monthStart.getMonth() === reference.getMonth();
 }
@@ -70,6 +79,13 @@ export function formatMinutesAsHours(minutes: number): string {
   if (hours === 0) return `${mins}m`;
   if (mins === 0) return `${hours}h`;
   return `${hours}h ${mins}m`;
+}
+
+/** e.g. Thu 18 Sep, 9:15 am */
+export function formatClockTimestamp(date: Date): string {
+  const dateLabel = date.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
+  const timeLabel = date.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' });
+  return `${dateLabel}, ${timeLabel}`;
 }
 
 /** e.g. 3725 -> "01:02:05" */
