@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { Camera, LogOut, User, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
@@ -19,6 +20,8 @@ const FONT_SIZE_OPTIONS: { value: FontSizePreference; label: string }[] = [
   { value: 'extraLarge', label: 'XL' },
 ];
 
+const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+
 interface Props {
   profile: ProfileRow | null;
   onProfileChange: () => Promise<void>;
@@ -34,6 +37,8 @@ export function SettingsSheet({ profile, onProfileChange, onClose }: Props) {
     setNotificationsEnabled,
     fontSizePreference,
     setFontSizePreference,
+    allowWeekendClockIn,
+    setAllowWeekendClockIn,
   } = usePreferences();
 
   const userId = session?.user.id;
@@ -207,6 +212,27 @@ export function SettingsSheet({ profile, onProfileChange, onClose }: Props) {
             </View>
             <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
           </View>
+
+          <View className="flex-row items-center justify-between border-t border-neutral-100 pt-4 dark:border-neutral-800">
+            <View className="flex-1 pr-4">
+              <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">Weekend Clock-In</Text>
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                When off, clock-in is disabled on Saturdays and Sundays
+              </Text>
+            </View>
+            <Switch value={allowWeekendClockIn} onValueChange={setAllowWeekendClockIn} />
+          </View>
+        </View>
+
+        <View className="items-center gap-2 rounded-3xl bg-white p-5 shadow-sm shadow-black/5 dark:bg-neutral-900">
+          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">About ShiftSplit</Text>
+          <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+            Track your work hours across Mangere and Highbrook with automatic, geofence-based clock-in and clock-out.
+          </Text>
+          <Text className="mt-2 text-center text-xs text-neutral-400 dark:text-neutral-500">
+            Development and concept by Ganushka Gamage
+          </Text>
+          <Text className="text-xs text-neutral-400 dark:text-neutral-500">Version {appVersion}</Text>
         </View>
 
         <Pressable

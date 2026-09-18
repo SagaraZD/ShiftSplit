@@ -8,6 +8,7 @@ export type FontSizePreference = 'small' | 'medium' | 'large' | 'extraLarge';
 const THEME_KEY = 'shiftsplit:preference:theme';
 const NOTIFICATIONS_KEY = 'shiftsplit:preference:notifications-enabled';
 const FONT_SIZE_KEY = 'shiftsplit:preference:font-size';
+export const ALLOW_WEEKEND_CLOCK_IN_KEY = 'shiftsplit:preference:allow-weekend-clock-in';
 
 // "small" is the app's existing baseline sizing — every text-size Tailwind
 // class already in use is designed against a 1x scale, so small stays at 1.
@@ -26,6 +27,8 @@ interface PreferencesContextValue {
   fontSizePreference: FontSizePreference;
   setFontSizePreference: (value: FontSizePreference) => void;
   fontScale: number;
+  allowWeekendClockIn: boolean;
+  setAllowWeekendClockIn: (value: boolean) => void;
   loaded: boolean;
 }
 
@@ -44,14 +47,18 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
   const [notificationsEnabled, setNotificationsEnabledState] = useState(true);
   const [fontSizePreference, setFontSizePreferenceState] = useState<FontSizePreference>('small');
+  // Weekends are outside the Mon–Fri work week by default — this is an opt-in
+  // exception, not the other way around.
+  const [allowWeekendClockIn, setAllowWeekendClockInState] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [storedTheme, storedNotifications, storedFontSize] = await Promise.all([
+      const [storedTheme, storedNotifications, storedFontSize, storedAllowWeekend] = await Promise.all([
         AsyncStorage.getItem(THEME_KEY),
         AsyncStorage.getItem(NOTIFICATIONS_KEY),
         AsyncStorage.getItem(FONT_SIZE_KEY),
+        AsyncStorage.getItem(ALLOW_WEEKEND_CLOCK_IN_KEY),
       ]);
       if (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system') {
         setThemePreferenceState(storedTheme);
@@ -62,6 +69,9 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
       }
       if (storedFontSize !== null && isFontSizePreference(storedFontSize)) {
         setFontSizePreferenceState(storedFontSize);
+      }
+      if (storedAllowWeekend !== null) {
+        setAllowWeekendClockInState(storedAllowWeekend === 'true');
       }
       setLoaded(true);
     })();
@@ -83,6 +93,11 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
     AsyncStorage.setItem(FONT_SIZE_KEY, value);
   };
 
+  const setAllowWeekendClockIn = (value: boolean) => {
+    setAllowWeekendClockInState(value);
+    AsyncStorage.setItem(ALLOW_WEEKEND_CLOCK_IN_KEY, value ? 'true' : 'false');
+  };
+
   const value = useMemo<PreferencesContextValue>(
     () => ({
       themePreference,
@@ -92,9 +107,11 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
       fontSizePreference,
       setFontSizePreference,
       fontScale: FONT_SCALES[fontSizePreference],
+      allowWeekendClockIn,
+      setAllowWeekendClockIn,
       loaded,
     }),
-    [themePreference, notificationsEnabled, fontSizePreference, loaded]
+    [themePreference, notificationsEnabled, fontSizePreference, allowWeekendClockIn, loaded]
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

@@ -11,12 +11,13 @@ import { ClockInButtons } from '@/components/shift/clock-in-buttons';
 import { LocationBreakdownCard } from '@/components/shift/location-breakdown-card';
 import { ProgressRingCard } from '@/components/shift/progress-ring-card';
 import { SettingsSheet } from '@/components/settings-sheet';
-import { BottomTabInset, Spacing } from '@/constants/theme';
-import { formatWeekRange, getWeekStart } from '@/lib/date-utils';
+import { BottomTabInset, BRAND_FONT_FAMILY, Spacing } from '@/constants/theme';
+import { formatWeekRange, getWeekStart, isWeekend } from '@/lib/date-utils';
 import { useActiveSession } from '@/hooks/use-active-session';
 import { useProfile } from '@/hooks/use-profile';
 import { useWeeklySummary } from '@/hooks/use-weekly-summary';
 import { useAuth } from '@/providers/auth-provider';
+import { usePreferences } from '@/providers/preferences-provider';
 import { clockIn, clockOut } from '@/services/work-log-service';
 
 export default function DashboardScreen() {
@@ -30,6 +31,7 @@ export default function DashboardScreen() {
     weekStart
   );
   const { profile, refresh: refreshProfile } = useProfile(userId);
+  const { allowWeekendClockIn } = usePreferences();
 
   const [submittingLocationId, setSubmittingLocationId] = useState<string | null>(null);
   const [clockingOut, setClockingOut] = useState(false);
@@ -45,6 +47,10 @@ export default function DashboardScreen() {
 
   const handleClockIn = async (locationId: string) => {
     if (!userId) return;
+    if (!allowWeekendClockIn && isWeekend(new Date())) {
+      Alert.alert('Weekend clock-in is off', 'Turn on Weekend Clock-In in Settings to log time on Saturdays and Sundays.');
+      return;
+    }
     setSubmittingLocationId(locationId);
     try {
       await clockIn(userId, locationId);
@@ -82,18 +88,31 @@ export default function DashboardScreen() {
         contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.four }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
         <View className="flex-row items-center justify-between px-1 pt-2">
-          <Pressable
-            onPress={() => setSettingsVisible(true)}
-            hitSlop={8}
-            className="h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-neutral-200 active:opacity-60 dark:bg-neutral-800">
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={{ width: 40, height: 40 }} contentFit="cover" />
-            ) : (
-              <Settings size={20} color="#9CA3AF" />
-            )}
-          </Pressable>
-          <View className="items-end">
-            <Text className="text-2xl font-bold text-neutral-900 dark:text-white">ShiftSplit</Text>
+          <View className="flex-row items-center gap-2">
+            <View className="h-12 w-12 overflow-hidden rounded-full">
+              <Image
+                source={require('@/assets/images/icon.png')}
+                style={{ width: 48, height: 48 }}
+                contentFit="cover"
+              />
+            </View>
+            <Text
+              className="text-3xl text-neutral-900 dark:text-white"
+              style={{ fontFamily: BRAND_FONT_FAMILY }}>
+              ShiftSplit
+            </Text>
+          </View>
+          <View className="items-end gap-1">
+            <Pressable
+              onPress={() => setSettingsVisible(true)}
+              hitSlop={8}
+              className="h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-neutral-200 active:opacity-60 dark:bg-neutral-800">
+              {profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={{ width: 40, height: 40 }} contentFit="cover" />
+              ) : (
+                <Settings size={20} color="#9CA3AF" />
+              )}
+            </Pressable>
             <Text className="text-sm text-neutral-500 dark:text-neutral-400">
               {profile?.display_name || session?.user.email}
             </Text>
@@ -115,7 +134,12 @@ export default function DashboardScreen() {
             submitting={clockingOut}
           />
         ) : (
-          <ClockInButtons onClockIn={handleClockIn} submittingLocationId={submittingLocationId} />
+          <ClockInButtons
+            onClockIn={handleClockIn}
+            submittingLocationId={submittingLocationId}
+            disabled={!allowWeekendClockIn && isWeekend(new Date())}
+            disabledReason="Weekend clock-in is off — enable it in Settings to log time today."
+          />
         )}
       </ScrollView>
 

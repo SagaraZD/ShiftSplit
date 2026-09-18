@@ -9,7 +9,7 @@ import { MonthCalendar } from '@/components/shift/month-calendar';
 import { SummaryStatsRow } from '@/components/shift/summary-stats-row';
 import { OFFICE_GEOFENCES } from '@/constants/locations';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { addMonths, formatMonthLabel, getMonthStart, isCurrentMonth } from '@/lib/date-utils';
+import { addMonths, formatMonthLabel, getMonthStart } from '@/lib/date-utils';
 import { useMonthCalendar } from '@/hooks/use-month-calendar';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { useNZHolidays } from '@/hooks/use-nz-holidays';
@@ -48,10 +48,8 @@ export default function CalendarScreen() {
           </Text>
           <Pressable
             onPress={() => setMonthStart((prev) => addMonths(prev, 1))}
-            disabled={isCurrentMonth(monthStart)}
             hitSlop={8}
-            className="rounded-full p-1.5 active:opacity-60"
-            style={{ opacity: isCurrentMonth(monthStart) ? 0.3 : 1 }}>
+            className="rounded-full p-1.5 active:opacity-60">
             <ChevronRight size={18} color="#6B7280" />
           </Pressable>
         </View>

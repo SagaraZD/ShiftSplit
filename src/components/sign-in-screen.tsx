@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/ui/text';
+import { BRAND_FONT_FAMILY } from '@/constants/theme';
 import { useAuth } from '@/providers/auth-provider';
 
 export function SignInScreen() {
@@ -37,7 +38,11 @@ export function SignInScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1 justify-center px-6">
-        <Text className="mb-1 text-3xl font-bold text-neutral-900 dark:text-white">ShiftSplit</Text>
+        <Text
+          className="mb-1 text-4xl text-neutral-900 dark:text-white"
+          style={{ fontFamily: BRAND_FONT_FAMILY }}>
+          ShiftSplit
+        </Text>
         <Text className="mb-8 text-base text-neutral-500 dark:text-neutral-400">
           Track your hours across Mangere and Highbrook.
         </Text>

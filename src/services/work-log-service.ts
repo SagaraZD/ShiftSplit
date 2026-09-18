@@ -1,5 +1,8 @@
-import { toISODate } from '@/lib/date-utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { isWeekend, toISODate } from '@/lib/date-utils';
 import { supabase } from '@/lib/supabase';
+import { ALLOW_WEEKEND_CLOCK_IN_KEY } from '@/providers/preferences-provider';
 import type { WeeklySummaryRow, WorkLogRow } from '@/types/database';
 
 export async function getActiveWorkLog(userId: string): Promise<WorkLogRow | null> {
@@ -17,6 +20,13 @@ export async function getActiveWorkLog(userId: string): Promise<WorkLogRow | nul
 }
 
 export async function clockIn(userId: string, locationId: string): Promise<WorkLogRow> {
+  if (isWeekend(new Date())) {
+    const allowWeekend = await AsyncStorage.getItem(ALLOW_WEEKEND_CLOCK_IN_KEY);
+    if (allowWeekend !== 'true') {
+      throw new Error('Weekend clock-in is off. Turn it on in Settings to log time today.');
+    }
+  }
+
   const active = await getActiveWorkLog(userId);
   if (active) {
     throw new Error('Already clocked in. Clock out before starting a new session.');

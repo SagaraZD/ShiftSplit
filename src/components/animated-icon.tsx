@@ -1,9 +1,14 @@
+import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+
+import { BRAND_FONT_FAMILY } from '@/constants/theme';
+
+const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
@@ -52,7 +57,8 @@ export function AnimatedSplashOverlay({ ready }: Props) {
       <Image style={styles.image} source={require('@/assets/images/splash-icon.png')} />
       <View style={styles.footer}>
         <ActivityIndicator color="#FFFFFF" />
-        <Text style={styles.credit}>by Ganushka Gamage</Text>
+        <Text style={styles.credit}>By Ganushka Gamage ❤️</Text>
+        <Text style={styles.version}>v{appVersion}</Text>
       </View>
     </View>
   );
@@ -173,8 +179,8 @@ const styles = StyleSheet.create({
   },
   appName: {
     color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 34,
+    fontFamily: BRAND_FONT_FAMILY,
     letterSpacing: 0.5,
   },
   footer: {
@@ -186,5 +192,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     opacity: 0.85,
+  },
+  version: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '400',
+    opacity: 0.6,
   },
 });

@@ -67,6 +67,11 @@ export function getMondayIndex(date: Date): number {
   return (date.getDay() + 6) % 7;
 }
 
+export function isWeekend(date: Date): boolean {
+  const day = date.getDay(); // 0 = Sun, 6 = Sat
+  return day === 0 || day === 6;
+}
+
 export function isCurrentMonth(monthStart: Date, reference = new Date()): boolean {
   return monthStart.getFullYear() === reference.getFullYear() && monthStart.getMonth() === reference.getMonth();
 }

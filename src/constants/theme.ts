@@ -63,3 +63,6 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+/** Soft geometric display font used for the "ShiftSplit" wordmark — loaded via useFonts in the root layout. */
+export const BRAND_FONT_FAMILY = 'Comfortaa_600SemiBold';

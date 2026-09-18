@@ -67,6 +67,26 @@ export function ProgressRingCard({ locations, targetMinutes, weekStart }: Props)
           +{formatMinutesAsHours(overtimeMinutes)} overtime
         </Text>
       )}
+      <View className="mt-4 flex-row flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        {locations
+          .filter((location) => location.minutes > 0)
+          .map((location) => (
+            <View key={location.locationId} className="flex-row items-center gap-1.5">
+              <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: location.color }} />
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                {location.name} · {formatMinutesAsHours(location.minutes)}
+              </Text>
+            </View>
+          ))}
+        {remainingMinutes > 0 && (
+          <View className="flex-row items-center gap-1.5">
+            <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: trackColor }} />
+            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+              Remaining · {formatMinutesAsHours(remainingMinutes)}
+            </Text>
+          </View>
+        )}
+      </View>
     </Animated.View>
   );
 }
