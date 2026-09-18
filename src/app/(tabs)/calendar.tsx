@@ -9,7 +9,7 @@ import { MonthCalendar } from '@/components/shift/month-calendar';
 import { SummaryStatsRow } from '@/components/shift/summary-stats-row';
 import { OFFICE_GEOFENCES } from '@/constants/locations';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { addMonths, formatMonthLabel, getMonthStart } from '@/lib/date-utils';
+import { addMonths, formatMonthLabel, getMonthStart, isCurrentMonth } from '@/lib/date-utils';
 import { useMonthCalendar } from '@/hooks/use-month-calendar';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { useNZHolidays } from '@/hooks/use-nz-holidays';
@@ -34,7 +34,17 @@ export default function CalendarScreen() {
       <ScrollView
         contentContainerClassName="gap-4 px-4 pt-2"
         contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.four }}>
-        <Text className="px-1 pt-2 text-2xl font-bold text-neutral-900 dark:text-white">Calendar</Text>
+        <View className="flex-row items-center justify-between px-1 pt-2">
+          <Text className="text-2xl font-bold text-neutral-900 dark:text-white">Calendar</Text>
+          {!isCurrentMonth(monthStart) && (
+            <Pressable
+              onPress={() => setMonthStart(getMonthStart())}
+              hitSlop={8}
+              className="rounded-full bg-indigo-600 px-3 py-1.5 active:opacity-80">
+              <Text className="text-xs font-semibold text-white">Today</Text>
+            </Pressable>
+          )}
+        </View>
 
         <View className="flex-row items-center justify-between rounded-full border border-neutral-200 bg-white px-2 py-1.5 dark:border-neutral-700 dark:bg-neutral-900">
           <Pressable
