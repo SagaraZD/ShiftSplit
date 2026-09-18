@@ -96,8 +96,10 @@ export async function setupGeofencing(): Promise<{ granted: boolean }> {
     // Permission requests or region monitoring can fail for reasons outside
     // our control (e.g. the iOS Simulator, which lacks real GPS hardware, or
     // a misconfigured Info.plist) — clock-in/out prompts just won't fire in
-    // that case, which shouldn't surface as an app-level error.
-    console.warn('[geofence-service] geofencing unavailable', err instanceof Error ? err.message : err);
+    // that case. This is an expected, already-handled condition rather than
+    // a bug, so it's logged at `log` (terminal-visible) rather than `warn`
+    // (which would pop a LogBox toast on every simulator launch).
+    console.log('[geofence-service] geofencing unavailable', err instanceof Error ? err.message : err);
     return { granted: false };
   }
 }
