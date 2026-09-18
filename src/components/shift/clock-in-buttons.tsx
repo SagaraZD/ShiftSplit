@@ -14,7 +14,7 @@ interface Props {
 export function ClockInButtons({ onClockIn, submittingLocationId, disabled, disabledReason }: Props) {
   return (
     <View className="gap-3">
-      <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">Manual Clock In</Text>
+      <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">Manual Sign In</Text>
       <View className="flex-row gap-3">
         {OFFICE_GEOFENCES.map((office) => {
           const submitting = submittingLocationId === office.id;
@@ -29,7 +29,7 @@ export function ClockInButtons({ onClockIn, submittingLocationId, disabled, disa
                 opacity: disabled ? 0.4 : submittingLocationId && !submitting ? 0.5 : 1,
               }}>
               {submitting ? <ActivityIndicator color="#fff" /> : <Clock size={18} color="#fff" />}
-              <Text className="text-center text-sm font-semibold text-white">Clock In{'\n'}{office.name}</Text>
+              <Text className="text-center text-sm font-semibold text-white">Sign In{'\n'}{office.name}</Text>
             </Pressable>
           );
         })}

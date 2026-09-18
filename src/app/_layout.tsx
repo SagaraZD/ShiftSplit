@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
 import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { SignInScreen } from '@/components/sign-in-screen';
@@ -54,12 +55,14 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <PreferencesProvider>
-        <AuthProvider>
-          <RootNavigator />
-        </AuthProvider>
-      </PreferencesProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <PreferencesProvider>
+          <AuthProvider>
+            <RootNavigator />
+          </AuthProvider>
+        </PreferencesProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

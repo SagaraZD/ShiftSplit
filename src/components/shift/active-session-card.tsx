@@ -24,7 +24,7 @@ export function ActiveSessionCard({ locationId, startTime, elapsedSeconds, onClo
       style={{ backgroundColor: office?.color ?? '#6366F1' }}>
       <View className="flex-row items-center justify-between">
         <View>
-          <Text className="text-sm font-medium text-white/80">Clocked in at</Text>
+          <Text className="text-sm font-medium text-white/80">Signed in at</Text>
           <Text className="text-xl font-bold text-white">{office?.name ?? 'Unknown office'}</Text>
           <Text className="mt-0.5 text-sm text-white/80">{formatClockTimestamp(new Date(startTime))}</Text>
         </View>
@@ -42,7 +42,7 @@ export function ActiveSessionCard({ locationId, startTime, elapsedSeconds, onClo
         ) : (
           <Square size={16} color="#fff" fill="#fff" />
         )}
-        <Text className="text-base font-semibold text-white">Clock Out</Text>
+        <Text className="text-base font-semibold text-white">Sign Out</Text>
       </Pressable>
     </Animated.View>
   );

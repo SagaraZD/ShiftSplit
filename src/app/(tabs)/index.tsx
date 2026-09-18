@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Settings } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,7 +12,7 @@ import { LocationBreakdownCard } from '@/components/shift/location-breakdown-car
 import { ProgressRingCard } from '@/components/shift/progress-ring-card';
 import { SettingsSheet } from '@/components/settings-sheet';
 import { BottomTabInset, BRAND_FONT_FAMILY, Spacing } from '@/constants/theme';
-import { formatWeekRange, getWeekStart, isWeekend } from '@/lib/date-utils';
+import { addWeeks, formatWeekRange, getWeekStart, isSameWeek, isWeekend } from '@/lib/date-utils';
 import { useActiveSession } from '@/hooks/use-active-session';
 import { useProfile } from '@/hooks/use-profile';
 import { useWeeklySummary } from '@/hooks/use-weekly-summary';
@@ -23,7 +23,10 @@ import { clockIn, clockOut } from '@/services/work-log-service';
 export default function DashboardScreen() {
   const { session } = useAuth();
   const userId = session?.user.id;
-  const weekStart = useMemo(() => getWeekStart(), []);
+  const currentWeekStart = useMemo(() => getWeekStart(), []);
+  const [weekStart, setWeekStart] = useState(currentWeekStart);
+  const [weekSwipeDirection, setWeekSwipeDirection] = useState<'previous' | 'next'>('previous');
+  const isCurrentWeek = isSameWeek(weekStart, currentWeekStart);
 
   const { activeLog, elapsedSeconds, refresh: refreshActive } = useActiveSession(userId);
   const { rows, weekTotalMinutes, targetMinutes, loading, refresh: refreshWeekly } = useWeeklySummary(
@@ -37,6 +40,13 @@ export default function DashboardScreen() {
   const [clockingOut, setClockingOut] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  // Once the first week has ever loaded, keep the progress ring mounted
+  // during later week swipes (with a small spinner) instead of hiding it —
+  // hiding it made surrounding cards jump every time the week changed.
+  const [hasLoadedWeekOnce, setHasLoadedWeekOnce] = useState(false);
+  useEffect(() => {
+    if (!loading) setHasLoadedWeekOnce(true);
+  }, [loading]);
 
   const locations = rows.map((row) => ({
     locationId: row.location_id,
@@ -48,7 +58,7 @@ export default function DashboardScreen() {
   const handleClockIn = async (locationId: string) => {
     if (!userId) return;
     if (!allowWeekendClockIn && isWeekend(new Date())) {
-      Alert.alert('Weekend clock-in is off', 'Turn on Weekend Clock-In in Settings to log time on Saturdays and Sundays.');
+      Alert.alert('Weekend sign-in is off', 'Turn on Weekend Sign-In in Settings to log time on Saturdays and Sundays.');
       return;
     }
     setSubmittingLocationId(locationId);
@@ -56,7 +66,7 @@ export default function DashboardScreen() {
       await clockIn(userId, locationId);
       await Promise.all([refreshActive(), refreshWeekly()]);
     } catch (err) {
-      Alert.alert('Could not clock in', err instanceof Error ? err.message : 'Please try again.');
+      Alert.alert('Could not sign in', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSubmittingLocationId(null);
     }
@@ -69,7 +79,7 @@ export default function DashboardScreen() {
       await clockOut(userId, activeLog.id);
       await Promise.all([refreshActive(), refreshWeekly()]);
     } catch (err) {
-      Alert.alert('Could not clock out', err instanceof Error ? err.message : 'Please try again.');
+      Alert.alert('Could not sign out', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setClockingOut(false);
     }
@@ -79,6 +89,15 @@ export default function DashboardScreen() {
     setRefreshing(true);
     await Promise.all([refreshActive(), refreshWeekly()]);
     setRefreshing(false);
+  };
+
+  const handlePreviousWeek = () => {
+    setWeekSwipeDirection('previous');
+    setWeekStart((prev) => addWeeks(prev, -1));
+  };
+  const handleNextWeek = () => {
+    setWeekSwipeDirection('next');
+    setWeekStart((prev) => (isSameWeek(prev, currentWeekStart) ? prev : addWeeks(prev, 1)));
   };
 
   return (
@@ -119,7 +138,19 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {!loading && <ProgressRingCard locations={locations} targetMinutes={targetMinutes} weekStart={weekStart} />}
+        {hasLoadedWeekOnce && (
+          <ProgressRingCard
+            locations={locations}
+            targetMinutes={targetMinutes}
+            weekStart={weekStart}
+            isCurrentWeek={isCurrentWeek}
+            onPreviousWeek={handlePreviousWeek}
+            onNextWeek={handleNextWeek}
+            canGoToNextWeek={!isCurrentWeek}
+            isRefreshing={loading}
+            direction={weekSwipeDirection}
+          />
+        )}
 
         {locations.length > 0 && (
           <LocationBreakdownCard locations={locations} subtitle={formatWeekRange(weekStart)} />
@@ -138,7 +169,7 @@ export default function DashboardScreen() {
             onClockIn={handleClockIn}
             submittingLocationId={submittingLocationId}
             disabled={!allowWeekendClockIn && isWeekend(new Date())}
-            disabledReason="Weekend clock-in is off — enable it in Settings to log time today."
+            disabledReason="Weekend sign-in is off — enable it in Settings to log time today."
           />
         )}
       </ScrollView>

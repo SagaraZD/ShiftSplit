@@ -38,7 +38,7 @@ export async function ensureNotificationSetup(): Promise<boolean> {
   if (status !== 'granted') return false;
 
   await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORY.CLOCK_IN, [
-    { identifier: NOTIFICATION_ACTION.CLOCK_IN, buttonTitle: 'Clock In', options: { opensAppToForeground: true } },
+    { identifier: NOTIFICATION_ACTION.CLOCK_IN, buttonTitle: 'Sign In', options: { opensAppToForeground: true } },
     {
       identifier: NOTIFICATION_ACTION.IGNORE,
       buttonTitle: 'Ignore',
@@ -47,7 +47,7 @@ export async function ensureNotificationSetup(): Promise<boolean> {
   ]);
 
   await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORY.CLOCK_OUT, [
-    { identifier: NOTIFICATION_ACTION.CLOCK_OUT, buttonTitle: 'Clock Out', options: { opensAppToForeground: true } },
+    { identifier: NOTIFICATION_ACTION.CLOCK_OUT, buttonTitle: 'Sign Out', options: { opensAppToForeground: true } },
     {
       identifier: NOTIFICATION_ACTION.IGNORE,
       buttonTitle: 'Ignore',
@@ -62,7 +62,7 @@ export async function presentClockInPrompt(locationId: string, locationName: str
   await Notifications.scheduleNotificationAsync({
     content: {
       title: `Arrived at ${locationName} Office?`,
-      body: 'Tap to Clock In',
+      body: 'Tap to Sign In',
       categoryIdentifier: NOTIFICATION_CATEGORY.CLOCK_IN,
       data: { locationId, locationName },
     },
@@ -79,7 +79,7 @@ export async function scheduleClockOutPrompt(
   return Notifications.scheduleNotificationAsync({
     content: {
       title: `Left ${locationName} Office?`,
-      body: 'Tap to Clock Out',
+      body: 'Tap to Sign Out',
       categoryIdentifier: NOTIFICATION_CATEGORY.CLOCK_OUT,
       data: { locationId, locationName },
     },
