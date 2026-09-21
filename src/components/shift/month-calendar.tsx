@@ -1,4 +1,4 @@
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { SlideInLeft, SlideInRight, SlideOutLeft, SlideOutRight } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -14,6 +14,7 @@ interface Props {
   holidays?: PublicHoliday[];
   onPreviousMonth: () => void;
   onNextMonth: () => void;
+  onSelectDay: (date: Date) => void;
   isRefreshing: boolean;
   /** Which direction the month just moved, so the content slides the right way. */
   direction: 'previous' | 'next';
@@ -54,6 +55,7 @@ export function MonthCalendar({
   holidays = [],
   onPreviousMonth,
   onNextMonth,
+  onSelectDay,
   isRefreshing,
   direction,
 }: Props) {
@@ -115,7 +117,11 @@ export function MonthCalendar({
                   const isHoliday = holidaysByDate.has(toISODate(day.date));
 
                   return (
-                    <View key={day.date.toISOString()} style={{ width: DAY_CELL_WIDTH }} className="aspect-square p-1">
+                    <Pressable
+                      key={day.date.toISOString()}
+                      onPress={() => onSelectDay(day.date)}
+                      style={{ width: DAY_CELL_WIDTH }}
+                      className="aspect-square p-1 active:opacity-70">
                       <View
                         className={`flex-1 items-center justify-center overflow-hidden rounded-xl ${
                           isToday ? 'border-2 border-indigo-500' : ''
@@ -158,7 +164,7 @@ export function MonthCalendar({
                           </View>
                         )}
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 })}
 

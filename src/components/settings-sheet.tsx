@@ -230,7 +230,7 @@ export function SettingsSheet({ profile, onProfileChange, onClose }: Props) {
             Track your work hours across Mangere and Highbrook with automatic, geofence-based sign-in and sign-out.
           </Text>
           <Text className="mt-2 text-center text-xs text-neutral-400 dark:text-neutral-500">
-            Development and concept by Ganushka Gamage
+            Development and concept by Ganushka Gamage ❤️
           </Text>
           <Text className="text-xs text-neutral-400 dark:text-neutral-500">Version {appVersion}</Text>
         </View>

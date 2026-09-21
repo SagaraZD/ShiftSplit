@@ -77,3 +77,65 @@ export async function getWorkLogsInRange(userId: string, rangeStart: Date, range
   if (error) throw error;
   return data ?? [];
 }
+
+/**
+ * Manually-added entries always carry both a start and end time — an
+ * open-ended row (end_time null) is reserved for the live clock-in flow,
+ * and the DB only allows one of those per user at a time.
+ */
+export async function createManualWorkLog(
+  userId: string,
+  locationId: string,
+  startTime: Date,
+  endTime: Date
+): Promise<WorkLogRow> {
+  if (endTime <= startTime) {
+    throw new Error('End time must be after the start time.');
+  }
+
+  const { data, error } = await supabase
+    .from('work_logs')
+    .insert({
+      user_id: userId,
+      location_id: locationId,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateManualWorkLog(
+  userId: string,
+  workLogId: string,
+  locationId: string,
+  startTime: Date,
+  endTime: Date
+): Promise<WorkLogRow> {
+  if (endTime <= startTime) {
+    throw new Error('End time must be after the start time.');
+  }
+
+  const { data, error } = await supabase
+    .from('work_logs')
+    .update({
+      location_id: locationId,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+    })
+    .eq('id', workLogId)
+    .eq('user_id', userId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteWorkLog(userId: string, workLogId: string): Promise<void> {
+  const { error } = await supabase.from('work_logs').delete().eq('id', workLogId).eq('user_id', userId);
+  if (error) throw error;
+}

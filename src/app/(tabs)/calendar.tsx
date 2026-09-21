@@ -1,19 +1,22 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
 
+import { DayEntriesSheet } from '@/components/shift/day-entries-sheet';
 import { MonthCalendar } from '@/components/shift/month-calendar';
 import { SummaryStatsRow } from '@/components/shift/summary-stats-row';
 import { OFFICE_GEOFENCES } from '@/constants/locations';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { addMonths, formatMonthLabel, getMonthStart, isCurrentMonth } from '@/lib/date-utils';
+import { addDays, addMonths, formatMonthLabel, getMonthStart, isCurrentMonth } from '@/lib/date-utils';
 import { useMonthCalendar } from '@/hooks/use-month-calendar';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { useNZHolidays } from '@/hooks/use-nz-holidays';
 import { useAuth } from '@/providers/auth-provider';
+import { getWorkLogsInRange } from '@/services/work-log-service';
+import type { WorkLogRow } from '@/types/database';
 
 // Room for the title plus up to 3 holiday rows (the realistic NZ max in one
 // month, e.g. Good Friday + Easter Monday + Anzac Day) — rendering the card
@@ -27,7 +30,7 @@ export default function CalendarScreen() {
 
   const [monthStart, setMonthStart] = useState(() => getMonthStart());
   const [monthSwipeDirection, setMonthSwipeDirection] = useState<'previous' | 'next'>('previous');
-  const { days, loading } = useMonthCalendar(userId, monthStart);
+  const { days, loading, refresh: refreshMonthCalendar } = useMonthCalendar(userId, monthStart);
   const monthly = useMonthlySummary(userId, monthStart);
   const holidays = useNZHolidays(monthStart.getFullYear());
 
@@ -43,6 +46,23 @@ export default function CalendarScreen() {
     const date = new Date(holiday.date);
     return date.getFullYear() === monthStart.getFullYear() && date.getMonth() === monthStart.getMonth();
   });
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDayLogs, setSelectedDayLogs] = useState<WorkLogRow[]>([]);
+
+  const loadSelectedDayLogs = useCallback(async () => {
+    if (!userId || !selectedDate) return;
+    const logs = await getWorkLogsInRange(userId, selectedDate, addDays(selectedDate, 1));
+    setSelectedDayLogs(logs);
+  }, [userId, selectedDate]);
+
+  useEffect(() => {
+    loadSelectedDayLogs();
+  }, [loadSelectedDayLogs]);
+
+  const handleDayEntriesChange = async () => {
+    await Promise.all([loadSelectedDayLogs(), refreshMonthCalendar(), monthly.refresh()]);
+  };
 
   const handlePreviousMonth = () => {
     setMonthSwipeDirection('previous');
@@ -95,6 +115,7 @@ export default function CalendarScreen() {
             holidays={holidays}
             onPreviousMonth={handlePreviousMonth}
             onNextMonth={handleNextMonth}
+            onSelectDay={setSelectedDate}
             isRefreshing={loading}
             direction={monthSwipeDirection}
           />
@@ -133,6 +154,22 @@ export default function CalendarScreen() {
           )}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={selectedDate !== null}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSelectedDate(null)}>
+        {selectedDate && userId && (
+          <DayEntriesSheet
+            userId={userId}
+            date={selectedDate}
+            logs={selectedDayLogs}
+            onClose={() => setSelectedDate(null)}
+            onChange={handleDayEntriesChange}
+          />
+        )}
+      </Modal>
     </SafeAreaView>
   );
 }
