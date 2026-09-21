@@ -34,6 +34,10 @@ export const OFFICE_GEOFENCES: OfficeGeofence[] = [
 ];
 
 export const WEEKLY_TARGET_MINUTES = 40 * 60;
+export const DAILY_TARGET_MINUTES = 8 * 60;
+// Unpaid lunch break deducted once per calendar day actually worked, before
+// comparing totals against the daily/weekly targets above.
+export const LUNCH_BREAK_MINUTES = 30;
 export const EXIT_CONFIRMATION_DELAY_MS = 5 * 60 * 1000;
 
 export function getOfficeGeofence(locationId: string): OfficeGeofence | undefined {

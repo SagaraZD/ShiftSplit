@@ -203,6 +203,13 @@ end $$;
 -- Runs as SECURITY INVOKER (the default) so the row_level security policies
 -- above still apply — a caller can only ever see their own work_logs, even if
 -- they pass a different p_user_id.
+--
+-- A fixed 30-minute unpaid lunch break is deducted once per NZ calendar day
+-- actually worked (not once per session), then spread across that day's
+-- locations in proportion to their share of the day's raw minutes — so a
+-- day split across two clock-ins/outs isn't double-deducted, and per-location
+-- totals still add back up to the deducted week total. Both the daily (8h)
+-- and weekly (40h) targets are compared against these post-lunch minutes.
 -- ============================================================================
 create or replace function public.get_weekly_summary(p_user_id uuid, p_start_date date)
 returns table (
@@ -225,18 +232,37 @@ as $$
            (p_start_date + interval '5 days')::timestamptz as week_end
   ),
   logs as (
-    select wl.location_id, wl.duration_minutes
+    select wl.location_id, wl.duration_minutes,
+           (wl.start_time at time zone 'Pacific/Auckland')::date as work_date
     from public.work_logs wl, week_bounds wb
     where wl.user_id = p_user_id
       and wl.start_time >= wb.week_start
       and wl.start_time < wb.week_end
       and wl.duration_minutes is not null
   ),
+  daily_raw as (
+    select location_id, work_date, sum(duration_minutes)::numeric as raw_minutes
+    from logs
+    group by location_id, work_date
+  ),
+  daily_totals as (
+    select work_date,
+           sum(raw_minutes)::numeric as day_raw_minutes,
+           greatest(sum(raw_minutes) - 30, 0)::numeric as day_net_minutes
+    from daily_raw
+    group by work_date
+  ),
+  daily_net as (
+    select dr.location_id,
+           dr.raw_minutes * (dt.day_net_minutes / nullif(dt.day_raw_minutes, 0)) as net_minutes
+    from daily_raw dr
+    join daily_totals dt on dt.work_date = dr.work_date
+  ),
   per_location as (
     select l.id as location_id, l.name as location_name, l.color_code,
-           coalesce(sum(logs.duration_minutes), 0)::bigint as total_minutes
+           coalesce(round(sum(daily_net.net_minutes)), 0)::bigint as total_minutes
     from public.locations l
-    left join logs on logs.location_id = l.id
+    left join daily_net on daily_net.location_id = l.id
     group by l.id, l.name, l.color_code
   ),
   totals as (

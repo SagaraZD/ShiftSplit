@@ -5,7 +5,8 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, View } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
-import { getOfficeGeofence, OFFICE_GEOFENCES } from '@/constants/locations';
+import { DAILY_TARGET_MINUTES, getOfficeGeofence, LUNCH_BREAK_MINUTES, OFFICE_GEOFENCES } from '@/constants/locations';
+import { sumDurationMinutes } from '@/lib/aggregate';
 import { formatMinutesAsHours } from '@/lib/date-utils';
 import { createManualWorkLog, deleteWorkLog, updateManualWorkLog } from '@/services/work-log-service';
 import type { WorkLogRow } from '@/types/database';
@@ -39,6 +40,15 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const isFuture = date.getTime() > new Date().setHours(23, 59, 59, 999);
+
+  // Only completed entries have a duration_minutes to net down — an open
+  // (still clocked-in) session is excluded until it's clocked out, same as
+  // everywhere else totals are computed.
+  const completedLogs = logs.filter((log) => log.end_time);
+  const rawMinutes = completedLogs.reduce((sum, log) => sum + (log.duration_minutes ?? 0), 0);
+  const netMinutes = sumDurationMinutes(completedLogs);
+  const lunchDeducted = rawMinutes - netMinutes > 0;
+  const dayOvertimeMinutes = Math.max(0, netMinutes - DAILY_TARGET_MINUTES);
 
   const startAddEntry = () => {
     setForm({
@@ -104,6 +114,20 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
           <X size={22} color="#9CA3AF" />
         </Pressable>
       </View>
+
+      {completedLogs.length > 0 && (
+        <View className="flex-row items-center justify-between px-4 pb-3">
+          <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+            {formatMinutesAsHours(netMinutes)} worked
+            {lunchDeducted ? ` · ${LUNCH_BREAK_MINUTES}m lunch deducted` : ''}
+          </Text>
+          {dayOvertimeMinutes > 0 && (
+            <Text className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+              +{formatMinutesAsHours(dayOvertimeMinutes)} over 8h
+            </Text>
+          )}
+        </View>
+      )}
 
       <ScrollView contentContainerClassName="gap-4 px-4 py-4">
         {form ? (
