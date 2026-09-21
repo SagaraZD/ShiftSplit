@@ -18,7 +18,7 @@ import { useProfile } from '@/hooks/use-profile';
 import { useWeeklySummary } from '@/hooks/use-weekly-summary';
 import { useAuth } from '@/providers/auth-provider';
 import { usePreferences } from '@/providers/preferences-provider';
-import { clockIn, clockOut } from '@/services/work-log-service';
+import { clockIn, clockOut, deleteWorkLog } from '@/services/work-log-service';
 
 export default function DashboardScreen() {
   const { session } = useAuth();
@@ -83,6 +83,28 @@ export default function DashboardScreen() {
     } finally {
       setClockingOut(false);
     }
+  };
+
+  const handleCancelSession = () => {
+    if (!userId || !activeLog) return;
+    Alert.alert('Cancel this session?', 'This removes it entirely — no time will be recorded.', [
+      { text: 'Keep it', style: 'cancel' },
+      {
+        text: 'Cancel Session',
+        style: 'destructive',
+        onPress: async () => {
+          setClockingOut(true);
+          try {
+            await deleteWorkLog(userId, activeLog.id);
+            await Promise.all([refreshActive(), refreshWeekly()]);
+          } catch (err) {
+            Alert.alert('Could not cancel session', err instanceof Error ? err.message : 'Please try again.');
+          } finally {
+            setClockingOut(false);
+          }
+        },
+      },
+    ]);
   };
 
   const handleRefresh = async () => {
@@ -162,6 +184,7 @@ export default function DashboardScreen() {
             startTime={activeLog.start_time}
             elapsedSeconds={elapsedSeconds}
             onClockOut={handleClockOut}
+            onCancel={handleCancelSession}
             submitting={clockingOut}
           />
         ) : (
