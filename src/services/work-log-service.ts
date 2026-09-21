@@ -19,17 +19,20 @@ export async function getActiveWorkLog(userId: string): Promise<WorkLogRow | nul
   return data;
 }
 
-export async function clockIn(userId: string, locationId: string): Promise<WorkLogRow> {
-  if (isWeekend(new Date())) {
-    const allowWeekend = await AsyncStorage.getItem(ALLOW_WEEKEND_CLOCK_IN_KEY);
-    if (allowWeekend !== 'true') {
-      throw new Error('Weekend clock-in is off. Turn it on in Settings to log time today.');
-    }
+async function assertWeekendSignInAllowed(date: Date): Promise<void> {
+  if (!isWeekend(date)) return;
+  const allowWeekend = await AsyncStorage.getItem(ALLOW_WEEKEND_CLOCK_IN_KEY);
+  if (allowWeekend !== 'true') {
+    throw new Error('Weekend sign-in is off. Turn it on in Settings to log time on weekends.');
   }
+}
+
+export async function clockIn(userId: string, locationId: string): Promise<WorkLogRow> {
+  await assertWeekendSignInAllowed(new Date());
 
   const active = await getActiveWorkLog(userId);
   if (active) {
-    throw new Error('Already clocked in. Clock out before starting a new session.');
+    throw new Error('Already signed in. Sign out before starting a new session.');
   }
 
   const { data, error } = await supabase
@@ -79,18 +82,32 @@ export async function getWorkLogsInRange(userId: string, rangeStart: Date, range
 }
 
 /**
- * Manually-added entries always carry both a start and end time — an
- * open-ended row (end_time null) is reserved for the live clock-in flow,
- * and the DB only allows one of those per user at a time.
+ * Manually-added entries usually carry both a start and end time. Passing
+ * `endTime: null` instead leaves the entry open — for the "I forgot to sign
+ * in" case, where a backdated start time should pick up as the live active
+ * session, continuing the elapsed timer from that time. The DB only allows
+ * one open (end_time null) row per user, so that case re-checks the same way
+ * a live sign-in does.
  */
 export async function createManualWorkLog(
   userId: string,
   locationId: string,
   startTime: Date,
-  endTime: Date
+  endTime: Date | null
 ): Promise<WorkLogRow> {
-  if (endTime <= startTime) {
+  if (endTime && endTime <= startTime) {
     throw new Error('End time must be after the start time.');
+  }
+
+  if (!endTime) {
+    if (startTime > new Date()) {
+      throw new Error('Start time cannot be in the future.');
+    }
+    await assertWeekendSignInAllowed(startTime);
+    const active = await getActiveWorkLog(userId);
+    if (active) {
+      throw new Error('Already signed in. Sign out before starting a new open session.');
+    }
   }
 
   const { data, error } = await supabase
@@ -99,7 +116,7 @@ export async function createManualWorkLog(
       user_id: userId,
       location_id: locationId,
       start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
+      end_time: endTime ? endTime.toISOString() : null,
     })
     .select('*')
     .single();
@@ -113,10 +130,21 @@ export async function updateManualWorkLog(
   workLogId: string,
   locationId: string,
   startTime: Date,
-  endTime: Date
+  endTime: Date | null
 ): Promise<WorkLogRow> {
-  if (endTime <= startTime) {
+  if (endTime && endTime <= startTime) {
     throw new Error('End time must be after the start time.');
+  }
+
+  if (!endTime) {
+    if (startTime > new Date()) {
+      throw new Error('Start time cannot be in the future.');
+    }
+    await assertWeekendSignInAllowed(startTime);
+    const active = await getActiveWorkLog(userId);
+    if (active && active.id !== workLogId) {
+      throw new Error('Already signed in elsewhere. Sign out before reopening this entry.');
+    }
   }
 
   const { data, error } = await supabase
@@ -124,7 +152,7 @@ export async function updateManualWorkLog(
     .update({
       location_id: locationId,
       start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
+      end_time: endTime ? endTime.toISOString() : null,
     })
     .eq('id', workLogId)
     .eq('user_id', userId)

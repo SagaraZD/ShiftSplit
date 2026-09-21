@@ -1,13 +1,13 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Pencil, Plus, Trash2, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
 import { DAILY_TARGET_MINUTES, getOfficeGeofence, LUNCH_BREAK_MINUTES, OFFICE_GEOFENCES } from '@/constants/locations';
 import { sumDurationMinutes } from '@/lib/aggregate';
-import { formatMinutesAsHours } from '@/lib/date-utils';
+import { formatMinutesAsHours, isSameDay } from '@/lib/date-utils';
 import { createManualWorkLog, deleteWorkLog, updateManualWorkLog } from '@/services/work-log-service';
 import type { WorkLogRow } from '@/types/database';
 
@@ -23,7 +23,12 @@ interface FormState {
   workLogId: string | null;
   locationId: string;
   startTime: Date;
+  // Kept even while `isOpen` is true so the picker has a sensible value if
+  // the user switches back to entering a normal, completed entry.
   endTime: Date;
+  // No end time — for "I forgot to sign in": the entry picks up as the live
+  // active session, continuing the elapsed timer from `startTime`.
+  isOpen: boolean;
 }
 
 function timeOnDay(day: Date, hours: number, minutes: number): Date {
@@ -40,6 +45,7 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const isFuture = date.getTime() > new Date().setHours(23, 59, 59, 999);
+  const isToday = isSameDay(date, new Date());
 
   // Only completed entries have a duration_minutes to net down — an open
   // (still clocked-in) session is excluded until it's clocked out, same as
@@ -56,6 +62,7 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
       locationId: OFFICE_GEOFENCES[0].id,
       startTime: timeOnDay(date, 9, 0),
       endTime: timeOnDay(date, 17, 0),
+      isOpen: false,
     });
   };
 
@@ -65,6 +72,7 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
       locationId: log.location_id,
       startTime: new Date(log.start_time),
       endTime: log.end_time ? new Date(log.end_time) : timeOnDay(date, 17, 0),
+      isOpen: !log.end_time,
     });
   };
 
@@ -88,12 +96,13 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
 
   const handleSave = async () => {
     if (!form) return;
+    const effectiveEndTime = form.isOpen ? null : form.endTime;
     setSaving(true);
     try {
       if (form.workLogId) {
-        await updateManualWorkLog(userId, form.workLogId, form.locationId, form.startTime, form.endTime);
+        await updateManualWorkLog(userId, form.workLogId, form.locationId, form.startTime, effectiveEndTime);
       } else {
-        await createManualWorkLog(userId, form.locationId, form.startTime, form.endTime);
+        await createManualWorkLog(userId, form.locationId, form.startTime, effectiveEndTime);
       }
       await onChange();
       setForm(null);
@@ -171,16 +180,32 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
                   onChange={(_, selected) => selected && setForm({ ...form, startTime: selected })}
                 />
               </View>
-              <View className="flex-1 gap-2">
-                <Text className="text-sm text-neutral-500 dark:text-neutral-400">End</Text>
-                <DateTimePicker
-                  value={form.endTime}
-                  mode="time"
-                  display={Platform.OS === 'ios' ? 'compact' : 'default'}
-                  onChange={(_, selected) => selected && setForm({ ...form, endTime: selected })}
-                />
-              </View>
+              {!form.isOpen && (
+                <View className="flex-1 gap-2">
+                  <Text className="text-sm text-neutral-500 dark:text-neutral-400">End</Text>
+                  <DateTimePicker
+                    value={form.endTime}
+                    mode="time"
+                    display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                    onChange={(_, selected) => selected && setForm({ ...form, endTime: selected })}
+                  />
+                </View>
+              )}
             </View>
+
+            {(isToday || form.workLogId) && (
+              <View className="flex-row items-center justify-between border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                <View className="flex-1 pr-4">
+                  <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                    Forgot to sign in?
+                  </Text>
+                  <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Leave it open — the timer keeps running from this start time.
+                  </Text>
+                </View>
+                <Switch value={form.isOpen} onValueChange={(isOpen) => setForm({ ...form, isOpen })} />
+              </View>
+            )}
 
             <View className="flex-row gap-3">
               <Pressable
@@ -223,16 +248,14 @@ export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props
                         </Text>
                       </View>
                     </View>
-                    {log.end_time && (
-                      <View className="flex-row gap-1">
-                        <Pressable onPress={() => startEditEntry(log)} hitSlop={8} className="rounded-full p-2 active:opacity-60">
-                          <Pencil size={16} color="#9CA3AF" />
-                        </Pressable>
-                        <Pressable onPress={() => handleDelete(log)} hitSlop={8} className="rounded-full p-2 active:opacity-60">
-                          <Trash2 size={16} color="#EF4444" />
-                        </Pressable>
-                      </View>
-                    )}
+                    <View className="flex-row gap-1">
+                      <Pressable onPress={() => startEditEntry(log)} hitSlop={8} className="rounded-full p-2 active:opacity-60">
+                        <Pencil size={16} color="#9CA3AF" />
+                      </Pressable>
+                      <Pressable onPress={() => handleDelete(log)} hitSlop={8} className="rounded-full p-2 active:opacity-60">
+                        <Trash2 size={16} color="#EF4444" />
+                      </Pressable>
+                    </View>
                   </View>
                 );
               })
