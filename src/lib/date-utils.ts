@@ -21,8 +21,18 @@ export function addWeeks(date: Date, weeks: number): Date {
   return addDays(date, weeks * 7);
 }
 
+// Uses the date's local calendar fields, not `.toISOString()` — every other
+// date built in this file (getWeekStart, getMonthStart, etc.) is a local
+// midnight, and for a positive UTC offset like NZ, `.toISOString()` rolls
+// that back to the previous day. That mismatch is what made the calendar
+// grid mark a public holiday a day off from where the holidays list showed
+// it: the list parses holiday.date directly, while the grid compared it
+// against this function's (UTC) output.
 export function toISODate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function getMonthStart(date = new Date()): Date {

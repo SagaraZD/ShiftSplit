@@ -227,9 +227,13 @@ language sql
 stable
 as $$
   with week_bounds as (
-    -- The work week is Monday through Friday; p_start_date is always a Monday.
-    select p_start_date::timestamptz as week_start,
-           (p_start_date + interval '5 days')::timestamptz as week_end
+    -- The work week is Monday through Friday; p_start_date is always a Monday,
+    -- given as an NZ calendar date (the offices are Auckland-based). Convert
+    -- explicitly via Pacific/Auckland rather than casting straight to
+    -- timestamptz, which would anchor midnight to the database session's own
+    -- timezone (UTC on Supabase) instead of NZ midnight.
+    select (p_start_date::timestamp at time zone 'Pacific/Auckland') as week_start,
+           ((p_start_date + interval '5 days')::timestamp at time zone 'Pacific/Auckland') as week_end
   ),
   logs as (
     select wl.location_id, wl.duration_minutes,
