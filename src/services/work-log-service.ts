@@ -5,6 +5,25 @@ import { supabase } from '@/lib/supabase';
 import { ALLOW_WEEKEND_CLOCK_IN_KEY } from '@/providers/preferences-provider';
 import type { WeeklySummaryRow, WorkLogRow } from '@/types/database';
 
+const workLogsChangedListeners = new Set<() => void>();
+
+/**
+ * Notifies every mounted data hook, on every tab, that work_logs changed from
+ * this device. Realtime events alone aren't reliably delivered to screens
+ * sitting in a background tab, so each write below announces itself locally
+ * too. Returns an unsubscribe function.
+ */
+export function onWorkLogsChanged(listener: () => void): () => void {
+  workLogsChangedListeners.add(listener);
+  return () => {
+    workLogsChangedListeners.delete(listener);
+  };
+}
+
+function notifyWorkLogsChanged() {
+  workLogsChangedListeners.forEach((listener) => listener());
+}
+
 export async function getActiveWorkLog(userId: string): Promise<WorkLogRow | null> {
   const { data, error } = await supabase
     .from('work_logs')
@@ -42,6 +61,7 @@ export async function clockIn(userId: string, locationId: string): Promise<WorkL
     .single();
 
   if (error) throw error;
+  notifyWorkLogsChanged();
   return data;
 }
 
@@ -55,6 +75,7 @@ export async function clockOut(userId: string, workLogId: string): Promise<WorkL
     .single();
 
   if (error) throw error;
+  notifyWorkLogsChanged();
   return data;
 }
 
@@ -122,6 +143,7 @@ export async function createManualWorkLog(
     .single();
 
   if (error) throw error;
+  notifyWorkLogsChanged();
   return data;
 }
 
@@ -160,10 +182,12 @@ export async function updateManualWorkLog(
     .single();
 
   if (error) throw error;
+  notifyWorkLogsChanged();
   return data;
 }
 
 export async function deleteWorkLog(userId: string, workLogId: string): Promise<void> {
   const { error } = await supabase.from('work_logs').delete().eq('id', workLogId).eq('user_id', userId);
   if (error) throw error;
+  notifyWorkLogsChanged();
 }

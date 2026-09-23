@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+import { onWorkLogsChanged } from '@/services/work-log-service';
 
 let channelSequence = 0;
 
@@ -16,6 +18,11 @@ let channelSequence = 0;
  * back the same, already-subscribed channel and its `.on(...)` call throws
  * "cannot add postgres_changes callbacks ... after subscribe()". Giving every
  * effect invocation its own unique topic avoids the collision entirely.
+ *
+ * Realtime alone isn't enough to keep every view current: screens in a
+ * background tab can miss events, and the socket drops while the app is
+ * backgrounded. So this also refreshes on writes made from this device
+ * (`onWorkLogsChanged`) and whenever the app returns to the foreground.
  */
 export function useRealtimeWorkLogs(userId: string | undefined, onChange: () => void) {
   useEffect(() => {
@@ -31,8 +38,15 @@ export function useRealtimeWorkLogs(userId: string | undefined, onChange: () => 
       )
       .subscribe();
 
+    const unsubscribeLocal = onWorkLogsChanged(onChange);
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') onChange();
+    });
+
     return () => {
       supabase.removeChannel(channel);
+      unsubscribeLocal();
+      appStateSubscription.remove();
     };
   }, [userId, onChange]);
 }
