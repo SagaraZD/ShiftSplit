@@ -1,3 +1,4 @@
+import { useFocusEffect } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
@@ -33,6 +34,17 @@ export default function CalendarScreen() {
   const { days, loading, refresh: refreshMonthCalendar } = useMonthCalendar(userId, monthStart);
   const monthly = useMonthlySummary(userId, monthStart);
   const holidays = useNZHolidays(monthStart.getFullYear());
+  const refreshMonthly = monthly.refresh;
+
+  // Signing in/out happens on the Dashboard tab, and the realtime event that
+  // would update this screen isn't reliably delivered while the tab sits in
+  // the background, so re-fetch whenever the Calendar tab gains focus.
+  useFocusEffect(
+    useCallback(() => {
+      refreshMonthCalendar();
+      refreshMonthly();
+    }, [refreshMonthCalendar, refreshMonthly])
+  );
 
   // Once the first month has ever loaded, keep the grid mounted during later
   // month changes (with a small spinner) instead of hiding it — hiding it
