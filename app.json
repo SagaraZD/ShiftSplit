@@ -19,14 +19,7 @@
         "backgroundColor": "#236F6E",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
-      ]
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "single",
@@ -40,16 +33,6 @@
           "backgroundColor": "#236F6E",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 180
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "ShiftSplit uses your location to automatically detect when you arrive at or leave the Mangere and Highbrook offices.",
-          "locationWhenInUsePermission": "ShiftSplit uses your location to detect when you arrive at or leave your office.",
-          "isIosBackgroundLocationEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true,
-          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "expo-notifications",

@@ -120,3 +120,19 @@ export function bucketLogsByDay(logs: WorkLogRow[], rangeStart: Date, dayCount =
     };
   });
 }
+
+/**
+ * When the open session takes its day's net time (after the once-a-day lunch
+ * deduction) to the daily target: DAILY_TARGET + LUNCH raw minutes, counting
+ * the sessions already closed that day. `dayLogs` are all logs that started
+ * on the open session's day, the open one included. Returns null if that
+ * moment is not after `now`.
+ */
+export function getDailyTargetReachedAt(openLog: WorkLogRow, dayLogs: WorkLogRow[], now = new Date()): Date | null {
+  const closedMinutes = dayLogs
+    .filter((log) => log.id !== openLog.id)
+    .reduce((sum, log) => sum + (log.duration_minutes ?? 0), 0);
+  const remainingMinutes = DAILY_TARGET_MINUTES + LUNCH_BREAK_MINUTES - closedMinutes;
+  const reachedAt = new Date(new Date(openLog.start_time).getTime() + remainingMinutes * 60_000);
+  return reachedAt > now ? reachedAt : null;
+}

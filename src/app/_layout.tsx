@@ -9,7 +9,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { SignInScreen } from '@/components/sign-in-screen';
 import { Text } from '@/components/ui/text';
 import { BRAND_FONT_FAMILY } from '@/constants/theme';
-import { useShiftTracking } from '@/hooks/use-shift-tracking';
+import { useDailyTargetAlert } from '@/hooks/use-daily-target-alert';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { PreferencesProvider, usePreferences } from '@/providers/preferences-provider';
 
@@ -18,7 +18,7 @@ SplashScreen.preventAutoHideAsync();
 function RootNavigator() {
   const { session, loading } = useAuth();
   const { notificationsEnabled } = usePreferences();
-  useShiftTracking(session?.user.id, notificationsEnabled);
+  useDailyTargetAlert(session?.user.id, notificationsEnabled);
 
   return (
     <>

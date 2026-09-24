@@ -207,7 +207,7 @@ export function SettingsSheet({ profile, onProfileChange, onClose }: Props) {
             <View className="flex-1 pr-4">
               <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">Notifications</Text>
               <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-                Location-based sign-in / sign-out prompts
+                Alert when today's hours reach 8h (after lunch)
               </Text>
             </View>
             <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
@@ -227,7 +227,7 @@ export function SettingsSheet({ profile, onProfileChange, onClose }: Props) {
         <View className="items-center gap-2 rounded-3xl bg-white p-5 shadow-sm shadow-black/5 dark:bg-neutral-900">
           <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">About ShiftSplit</Text>
           <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
-            Track your work hours across Mangere and Highbrook with automatic, geofence-based sign-in and sign-out.
+            Track your work hours across Mangere and Highbrook against a 40-hour week.
           </Text>
           <Text className="mt-2 text-center text-xs text-neutral-400 dark:text-neutral-500">
             Development and concept by Ganushka Gamage ❤️

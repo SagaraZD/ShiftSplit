@@ -1,16 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-export const NOTIFICATION_CATEGORY = {
-  CLOCK_IN: 'shiftsplit-clock-in',
-  CLOCK_OUT: 'shiftsplit-clock-out',
-} as const;
-
-export const NOTIFICATION_ACTION = {
-  CLOCK_IN: 'clock-in',
-  CLOCK_OUT: 'clock-out',
-  IGNORE: 'ignore',
-} as const;
+// Fixed identifier so re-scheduling replaces the pending alert instead of
+// stacking a second one, and cancelling needs no stored id.
+const DAILY_TARGET_NOTIFICATION_ID = 'shiftsplit-daily-target';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -35,67 +28,21 @@ export async function ensureNotificationSetup(): Promise<boolean> {
     const requested = await Notifications.requestPermissionsAsync();
     status = requested.status;
   }
-  if (status !== 'granted') return false;
-
-  await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORY.CLOCK_IN, [
-    { identifier: NOTIFICATION_ACTION.CLOCK_IN, buttonTitle: 'Sign In', options: { opensAppToForeground: true } },
-    {
-      identifier: NOTIFICATION_ACTION.IGNORE,
-      buttonTitle: 'Ignore',
-      options: { opensAppToForeground: false, isDestructive: true },
-    },
-  ]);
-
-  await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORY.CLOCK_OUT, [
-    { identifier: NOTIFICATION_ACTION.CLOCK_OUT, buttonTitle: 'Sign Out', options: { opensAppToForeground: true } },
-    {
-      identifier: NOTIFICATION_ACTION.IGNORE,
-      buttonTitle: 'Ignore',
-      options: { opensAppToForeground: false, isDestructive: true },
-    },
-  ]);
-
-  return true;
+  return status === 'granted';
 }
 
-export async function presentClockInPrompt(locationId: string, locationName: string) {
+/** Schedules (or moves) the one "8 hours done" alert to fire at `fireAt`. */
+export async function scheduleDailyTargetAlert(fireAt: Date): Promise<void> {
   await Notifications.scheduleNotificationAsync({
+    identifier: DAILY_TARGET_NOTIFICATION_ID,
     content: {
-      title: `Arrived at ${locationName} Office?`,
-      body: 'Tap to Sign In',
-      categoryIdentifier: NOTIFICATION_CATEGORY.CLOCK_IN,
-      data: { locationId, locationName },
+      title: "You've worked 8 hours today",
+      body: 'Daily target reached (after the 30 min lunch break). Remember to sign out.',
     },
-    trigger: null,
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
   });
 }
 
-/** Scheduled `EXIT_CONFIRMATION_DELAY_MS` in the future — cancel it if the user re-enters before it fires. */
-export async function scheduleClockOutPrompt(
-  locationId: string,
-  locationName: string,
-  delayMs: number
-): Promise<string> {
-  return Notifications.scheduleNotificationAsync({
-    content: {
-      title: `Left ${locationName} Office?`,
-      body: 'Tap to Sign Out',
-      categoryIdentifier: NOTIFICATION_CATEGORY.CLOCK_OUT,
-      data: { locationId, locationName },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: Math.max(1, Math.round(delayMs / 1000)),
-    },
-  });
-}
-
-export async function cancelScheduledNotification(notificationId: string) {
-  await Notifications.cancelScheduledNotificationAsync(notificationId);
-}
-
-export function addNotificationResponseListener(
-  handler: (response: Notifications.NotificationResponse) => void
-) {
-  return Notifications.addNotificationResponseReceivedListener(handler);
+export async function cancelDailyTargetAlert(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(DAILY_TARGET_NOTIFICATION_ID);
 }

@@ -23,8 +23,8 @@ export function useActiveSession(userId: string | undefined) {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
 
-  // Realtime keeps this in sync when a session is clocked in/out from a
-  // notification action or another device, with no polling required.
+  // Realtime keeps this in sync when a session is clocked in/out from
+  // another device, with no polling required.
   useRealtimeWorkLogs(userId, refresh);
 
   // Foreground-only UI timer: derives elapsed time from the stored start_time

@@ -326,36 +326,60 @@ create policy "Users can delete their own avatar"
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- ============================================================================
--- Cron: weekly summary email, every Friday
--- Calls the "weekly-summary-email" Edge Function (see supabase/functions/),
--- which emails every user their hours-worked summary for the current week.
+-- weekly_target_emails
+-- One row per user per work week once the "you've reached 40 hours" email has
+-- gone out, so the every-15-minutes job below emails each user at most once
+-- a week. Only the Edge Function (service role) reads or writes it: RLS is on
+-- with no policies, so app users can't see or change it.
+-- ============================================================================
+create table if not exists public.weekly_target_emails (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  week_start date not null, -- NZ Monday of the work week
+  sent_at timestamptz not null default now(),
+  primary key (user_id, week_start)
+);
+
+alter table public.weekly_target_emails enable row level security;
+
+-- ============================================================================
+-- Cron: Friday "you've reached 40 hours" email
+-- Calls the "weekly-target-email" Edge Function (see supabase/functions/)
+-- every 15 minutes on Thursdays and Fridays UTC, which together cover all of
+-- NZ Friday in both NZST and NZDT. The function itself only acts on NZ Friday
+-- from 8am: it emails any user whose net hours this work week (Mon–Fri, lunch
+-- deducted, current session included) have reached 40h and who hasn't been
+-- emailed yet this week — at 8am if they were already past 40h, otherwise
+-- within 15 minutes of reaching it. No 40h by the end of Friday, no email.
 --
 -- REPLACE the two placeholders below before running this section:
 --   <PROJECT_REF>         — your Supabase project ref (Project Settings → General).
 --   <SERVICE_ROLE_KEY>    — Project Settings → API → service_role key (keep secret).
---
--- The schedule below is '0 0 * * 5' = 00:00 UTC every Friday = 12:00pm NZST
--- (UTC+12). NZ Daylight Time (UTC+13, roughly late Sep–early Apr) shifts
--- local delivery to 1pm during that period — pg_cron always runs in UTC and
--- does not auto-adjust for the target timezone's DST. Change the cron
--- expression if you want a different local time.
+--                           The function rejects any other caller.
 -- ============================================================================
 create extension if not exists pg_cron with schema extensions;
 create extension if not exists pg_net with schema extensions;
 
 do $$
 begin
+  -- Replaced by 'weekly-target-email' below; drop it if an older setup scheduled it.
   perform cron.unschedule('weekly-summary-email-friday');
+exception when others then
+  null;
+end $$;
+
+do $$
+begin
+  perform cron.unschedule('weekly-target-email');
 exception when others then
   null; -- job didn't exist yet on first run
 end $$;
 
 select cron.schedule(
-  'weekly-summary-email-friday',
-  '0 0 * * 5',
+  'weekly-target-email',
+  '*/15 * * * 4,5',
   $$
   select net.http_post(
-    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/weekly-summary-email',
+    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/weekly-target-email',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer <SERVICE_ROLE_KEY>'

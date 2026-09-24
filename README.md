@@ -1,6 +1,6 @@
 # ShiftSplit
 
-A geofenced time-tracking app for staff working across two NZ office locations — **Mangere** and **Highbrook** — built with Expo/React Native and Supabase.
+A time-tracking app for staff working across two NZ office locations — **Mangere** and **Highbrook** — built with Expo/React Native and Supabase.
 
 | Dashboard (dark) | Dashboard (light) | Calendar |
 | --- | --- | --- |
@@ -8,20 +8,21 @@ A geofenced time-tracking app for staff working across two NZ office locations �
 
 ## Features
 
-- **Automatic geofenced sign-in/out** — background location monitoring detects arrival/departure at each office and prompts you to sign in or out via a notification, no manual action required.
-- **Manual sign-in** — for the days geofencing isn't practical, with a **Weekend Sign-In** toggle (off by default) so hours can't accidentally be logged on Saturdays/Sundays.
+- **Sign in/out per office** — with a **Weekend Sign-In** toggle (off by default) so hours can't accidentally be logged on Saturdays/Sundays.
 - **Weekly dashboard** — a progress ring against your 40h/week target (swipe or use the arrows to browse previous weeks), a color-coded legend per office, overtime tracking, and the current signed-in session with its start time.
 - **History** — a week-by-week breakdown of hours worked per office.
 - **Calendar** — a full month grid showing hours per day, totals per week, NZ public holidays (national + Auckland regional), and free navigation to past/future months (swipe or use the arrows) with a one-tap "Today" button.
-- **Profile & preferences** — display name and avatar (stored in Supabase Storage), light/dark/system theme, an app-wide font size setting (Small/Medium/Large/XL), and notification controls.
-- **Realtime sync** — sign in/out from a notification action or another device and every screen updates immediately via Supabase Realtime.
+- **Profile & preferences** — display name and avatar (stored in Supabase Storage), light/dark/system theme, an app-wide font size setting (Small/Medium/Large/XL), and a toggle for the 8-hour alert.
+- **8-hour alert** — a notification the moment today's hours reach 8h, after the 30-minute lunch break.
+- **40-hour email** — on Fridays, once you've reached 40h for the week, an email with your hours per office and per day.
+- **Realtime sync** — sign in/out from another device and every screen updates immediately via Supabase Realtime.
 
 ## Tech stack
 
 - [Expo](https://expo.dev) (SDK 57) with Expo Router and native tabs
 - React Native 0.86 + NativeWind (Tailwind for React Native)
 - [Supabase](https://supabase.com) — Auth, Postgres, Row Level Security, Realtime, Storage
-- `expo-location` background geofencing + `expo-notifications`
+- `expo-notifications` for the 8-hour alert; a Supabase Edge Function + `pg_cron` + [Resend](https://resend.com) for the 40-hour email
 
 ## Get started
 
