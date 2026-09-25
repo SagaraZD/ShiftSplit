@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { DAILY_TARGET_MINUTES, getOfficeGeofence, LUNCH_BREAK_MINUTES, OFFICE_GEOFENCES } from '@/constants/locations';
 import { sumDurationMinutes } from '@/lib/aggregate';
-import { formatMinutesAsHours, isSameDay } from '@/lib/date-utils';
+import { formatMinutesAsHours, formatTimeOfDay as formatTime, isSameDay } from '@/lib/date-utils';
 import { createManualWorkLog, deleteWorkLog, updateManualWorkLog } from '@/services/work-log-service';
 import type { WorkLogRow } from '@/types/database';
 
@@ -35,10 +35,6 @@ function timeOnDay(day: Date, hours: number, minutes: number): Date {
   const result = new Date(day);
   result.setHours(hours, minutes, 0, 0);
   return result;
-}
-
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' });
 }
 
 export function DayEntriesSheet({ userId, date, logs, onClose, onChange }: Props) {

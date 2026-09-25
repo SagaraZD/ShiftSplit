@@ -136,3 +136,35 @@ export function getDailyTargetReachedAt(openLog: WorkLogRow, dayLogs: WorkLogRow
   const reachedAt = new Date(new Date(openLog.start_time).getTime() + remainingMinutes * 60_000);
   return reachedAt > now ? reachedAt : null;
 }
+
+export interface LiveTotals {
+  todayMinutes: number;
+  weekMinutes: number;
+}
+
+/**
+ * Today's and this work week's net totals (after lunch) with the open
+ * session counted up to `now`, for the live session card. `weekLogs` are
+ * the week's logs from `weekStart`; the open session is swapped in (or
+ * added) with its elapsed minutes so the lunch rule treats it like any
+ * other log. Weekend logs don't count towards the week, same as elsewhere.
+ */
+export function getLiveTotals(
+  weekLogs: WorkLogRow[],
+  openLog: WorkLogRow,
+  weekStart: Date,
+  now = new Date()
+): LiveTotals {
+  const elapsedMinutes = Math.max(0, (now.getTime() - new Date(openLog.start_time).getTime()) / 60_000);
+  const liveOpenLog = { ...openLog, duration_minutes: elapsedMinutes };
+  const logs = [...weekLogs.filter((log) => log.id !== openLog.id && log.end_time), liveOpenLog];
+
+  const weekEnd = addDays(weekStart, WEEK_LENGTH_DAYS);
+  const inWeek = logs.filter((log) => {
+    const started = new Date(log.start_time);
+    return started >= weekStart && started < weekEnd && isWeekday(started);
+  });
+  const today = logs.filter((log) => dayKey(new Date(log.start_time)) === dayKey(now));
+
+  return { todayMinutes: sumDurationMinutes(today), weekMinutes: sumDurationMinutes(inWeek) };
+}

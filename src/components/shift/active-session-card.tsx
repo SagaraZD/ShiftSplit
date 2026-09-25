@@ -4,12 +4,16 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
 import { getOfficeGeofence } from '@/constants/locations';
-import { formatClockTimestamp, formatElapsed } from '@/lib/date-utils';
+import type { LiveTotals } from '@/lib/aggregate';
+import { formatClockTimestamp, formatElapsed, formatMinutesAsHours } from '@/lib/date-utils';
 
 interface Props {
   locationId: string;
   startTime: string;
   elapsedSeconds: number;
+  /** Net of lunch, including this session so far; null while the week is still loading. */
+  liveTotals: LiveTotals | null;
+  weekTargetMinutes: number;
   onClockOut: () => void;
   onCancel: () => void;
   submitting: boolean;
@@ -19,11 +23,14 @@ export function ActiveSessionCard({
   locationId,
   startTime,
   elapsedSeconds,
+  liveTotals,
+  weekTargetMinutes,
   onClockOut,
   onCancel,
   submitting,
 }: Props) {
   const office = getOfficeGeofence(locationId);
+  const weekRemaining = liveTotals ? weekTargetMinutes - liveTotals.weekMinutes : 0;
 
   return (
     <Animated.View
@@ -40,6 +47,25 @@ export function ActiveSessionCard({
       </View>
 
       <Text className="text-4xl font-bold text-white">{formatElapsed(elapsedSeconds)}</Text>
+
+      <View className="flex-row gap-2">
+        <View className="flex-1 rounded-2xl bg-black/15 px-3 py-2.5">
+          <Text className="text-xs font-medium text-white/75">Today</Text>
+          <Text className="text-lg font-bold text-white">{liveTotals ? formatMinutesAsHours(liveTotals.todayMinutes) : '…'}</Text>
+        </View>
+        <View className="flex-1 rounded-2xl bg-black/15 px-3 py-2.5">
+          <Text className="text-xs font-medium text-white/75">This week</Text>
+          <Text className="text-lg font-bold text-white">{liveTotals ? formatMinutesAsHours(liveTotals.weekMinutes) : '…'}</Text>
+          <Text className="text-xs text-white/75">
+            {!liveTotals
+              ? ' '
+              : weekRemaining > 0
+              ? `${formatMinutesAsHours(weekRemaining)} to ${formatMinutesAsHours(weekTargetMinutes)}`
+              : `+${formatMinutesAsHours(-weekRemaining)} over ${formatMinutesAsHours(weekTargetMinutes)}`}
+          </Text>
+        </View>
+      </View>
+      <Text className="-mt-2 text-xs text-white/70">Totals include this session, after the 30 min lunch</Text>
 
       <View className="flex-row gap-2">
         <Pressable

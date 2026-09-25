@@ -12,9 +12,12 @@ import { LocationBreakdownCard } from '@/components/shift/location-breakdown-car
 import { ProgressRingCard } from '@/components/shift/progress-ring-card';
 import { SettingsSheet } from '@/components/settings-sheet';
 import { BottomTabInset, BRAND_FONT_FAMILY, Spacing } from '@/constants/theme';
+import { WEEKLY_TARGET_MINUTES } from '@/constants/locations';
+import { getLiveTotals } from '@/lib/aggregate';
 import { addWeeks, formatWeekRange, getWeekStart, isSameWeek, isWeekend } from '@/lib/date-utils';
 import { useActiveSession } from '@/hooks/use-active-session';
 import { useProfile } from '@/hooks/use-profile';
+import { useWeekLogs } from '@/hooks/use-week-logs';
 import { useWeeklySummary } from '@/hooks/use-weekly-summary';
 import { useAuth } from '@/providers/auth-provider';
 import { usePreferences } from '@/providers/preferences-provider';
@@ -34,6 +37,19 @@ export default function DashboardScreen() {
     weekStart
   );
   const { profile, refresh: refreshProfile } = useProfile(userId);
+  // Always the current week (the ring above can be browsing an older one),
+  // so the live session card can show today's and this week's running totals.
+  const { logs: currentWeekLogs, loading: currentWeekLoading } = useWeekLogs(userId, currentWeekStart);
+  // "Now" is derived from the session timer so the totals tick with it.
+  const liveTotals =
+    activeLog && !currentWeekLoading
+      ? getLiveTotals(
+          currentWeekLogs,
+          activeLog,
+          currentWeekStart,
+          new Date(Date.parse(activeLog.start_time) + elapsedSeconds * 1000)
+        )
+      : null;
   const { allowWeekendClockIn } = usePreferences();
 
   const [submittingLocationId, setSubmittingLocationId] = useState<string | null>(null);
@@ -183,6 +199,8 @@ export default function DashboardScreen() {
             locationId={activeLog.location_id}
             startTime={activeLog.start_time}
             elapsedSeconds={elapsedSeconds}
+            liveTotals={liveTotals}
+            weekTargetMinutes={WEEKLY_TARGET_MINUTES}
             onClockOut={handleClockOut}
             onCancel={handleCancelSession}
             submitting={clockingOut}

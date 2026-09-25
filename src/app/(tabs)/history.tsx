@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
 
+import { DayEntriesSheet } from '@/components/shift/day-entries-sheet';
 import { LocationBreakdownCard } from '@/components/shift/location-breakdown-card';
 import { type PeriodMode, PeriodSwitcher } from '@/components/shift/period-switcher';
 import { SummaryStatsRow } from '@/components/shift/summary-stats-row';
 import { WeeklyBarChart } from '@/components/shift/weekly-bar-chart';
 import { WeekListItem } from '@/components/shift/week-list-item';
+import { WeekTimesheetCard } from '@/components/shift/week-timesheet-card';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import {
   addMonths,
@@ -18,6 +20,7 @@ import {
   getMonthStart,
   getWeekStart,
   isCurrentMonth,
+  isSameDay,
   isSameWeek,
 } from '@/lib/date-utils';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
@@ -36,6 +39,14 @@ export default function HistoryScreen() {
   const weekly = useWeeklySummary(userId, weekStart);
   const weekLogs = useWeekLogs(userId, weekStart);
   const monthly = useMonthlySummary(userId, monthStart);
+
+  // The day editor reads straight from this week's logs, which stay current
+  // through useWeekLogs' realtime subscription while the sheet is open.
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const selectedDayLogs = useMemo(
+    () => (selectedDate ? weekLogs.logs.filter((log) => isSameDay(new Date(log.start_time), selectedDate)) : []),
+    [weekLogs.logs, selectedDate]
+  );
 
   const weekLocations = weekly.rows.map((row) => ({
     locationId: row.location_id,
@@ -69,15 +80,16 @@ export default function HistoryScreen() {
 
         {mode === 'week' ? (
           <>
+            <WeekTimesheetCard weekStart={weekStart} logs={weekLogs.logs} onSelectDay={setSelectedDate} />
             <SummaryStatsRow
               totalMinutes={weekly.weekTotalMinutes}
               overtimeMinutes={weekly.overtimeMinutes}
               locations={weekLocations}
             />
-            <WeeklyBarChart days={weekLogs.days} />
             {weekLocations.length > 0 && (
               <LocationBreakdownCard locations={weekLocations} subtitle={formatWeekRange(weekStart)} />
             )}
+            <WeeklyBarChart days={weekLogs.days} />
           </>
         ) : (
           <>
@@ -104,6 +116,22 @@ export default function HistoryScreen() {
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={selectedDate !== null}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSelectedDate(null)}>
+        {selectedDate && userId && (
+          <DayEntriesSheet
+            userId={userId}
+            date={selectedDate}
+            logs={selectedDayLogs}
+            onClose={() => setSelectedDate(null)}
+            onChange={weekLogs.refresh}
+          />
+        )}
+      </Modal>
     </SafeAreaView>
   );
 }

@@ -96,6 +96,11 @@ export function formatMinutesAsHours(minutes: number): string {
   return `${hours}h ${mins}m`;
 }
 
+/** e.g. 9:15 am */
+export function formatTimeOfDay(date: Date): string {
+  return date.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' });
+}
+
 /** e.g. Thu 18 Sep, 9:15 am */
 export function formatClockTimestamp(date: Date): string {
   const dateLabel = date.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
