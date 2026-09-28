@@ -1,5 +1,3 @@
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 /** The work week is Monday–Friday. */
 export const WEEK_LENGTH_DAYS = 5;
 
@@ -13,8 +11,14 @@ export function getWeekStart(date = new Date()): Date {
   return d;
 }
 
+// Steps calendar days rather than adding days * 24h: across a daylight-saving
+// change a day is 23 or 25 hours long, and fixed-length arithmetic turned
+// "Monday 00:00 minus a week" into Sunday 23:00 — shifting the whole
+// previous week (and its RPC start date) back a day.
 export function addDays(date: Date, days: number): Date {
-  return new Date(date.getTime() + days * DAY_MS);
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
 }
 
 export function addWeeks(date: Date, weeks: number): Date {
